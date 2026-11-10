@@ -201,6 +201,21 @@ MetaMask 使用者的 NEAR 帳號就是自己的 `0x...` 地址（eth-implicit �
   （Etherlink 是另一條鏈，chain id 不同，這裡用不到 Etherlink 本身）。同一把私鑰在兩條鏈上的 `0x` 地址相同，
   所以連上後的 NEAR 帳號會跟 Etherlink 地址一樣。需要有裝 Temple 的瀏覽器才能實測。
 
+### 部署到 GitHub Pages（已設定好）
+
+`.github/workflows/pages.yml` 會在每次 push 到 `main` 時 build 前端並部署到
+**https://javaing.github.io/seed-garden-near/**（範例頁在 `/examples/harmonious-donuts/grid.html`）。
+
+1. 第一次：repo **Settings → Pages → Build and deployment → Source** 選 **GitHub Actions**。
+2. 到 **Actions** 分頁，對「Deploy demo to GitHub Pages」按 **Run workflow**（或任何一次 push 都會觸發）。
+3. 合約部署後，到 **Settings → Secrets and variables → Actions → Variables** 新增 `VITE_CONTRACT_ID`
+   （選填 `VITE_NETWORK_ID`、`VITE_VIEWER_URL`、`VITE_REOWN_PROJECT_ID`），再跑一次 workflow。
+   這些都是公開值，用 Variables 不用 Secrets。
+4. 用 Reown（WalletConnect）的話，記得把 `javaing.github.io` 加到 Reown 後台的網域 allowlist。
+
+本機模擬 Pages 的子路徑：`npm run build -- --base=/seed-garden-near/ && npx vite preview --base=/seed-garden-near/`
+（Git Bash 會把 `/seed-garden-near/` 轉成 Windows 路徑，前面加 `MSYS_NO_PATHCONV=1`，或改用 PowerShell。）
+
 ### 部署到 Vercel
 
 1. 把 repo 推到 GitHub（目前還沒公開，要公開前先確認）。
