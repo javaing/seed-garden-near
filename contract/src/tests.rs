@@ -157,18 +157,24 @@ fn excess_deposit_is_refunded_and_price_goes_to_owner() {
 }
 
 #[test]
-fn exact_deposit_has_no_refund() {
+fn refund_tracks_actual_storage_each_mint() {
+    // 每次 mint 實際用到的 bytes 不固定（同 owner 第二個 token 不用再建 enumeration 集合、
+    // TreeMap 會重新平衡），所以退款必須依「這一次」的實際用量計算，而不是固定估計值。
     let mut c = setup(10);
-    // 先 mint 一次量出 storage
-    testing_env!(ctx(accounts(1), NearToken::from_near(1), 1).build());
-    c.nft_mint(None);
-    let exact = PRICE.saturating_add(
-        env::storage_byte_cost().saturating_mul(c.last_mint_storage_bytes as u128),
-    );
-    testing_env!(ctx(accounts(1), exact, 2).build());
-    c.nft_mint(None);
-    let t = transfers();
-    assert!(!t.iter().any(|(a, _)| a == &accounts(1)), "unexpected refund {t:?}");
+    let deposit = NearToken::from_near(1);
+    let mut used = vec![];
+    for (i, receiver) in [None, None, Some(accounts(4))].into_iter().enumerate() {
+        testing_env!(ctx(accounts(1), deposit, i as u8).build());
+        c.nft_mint(receiver);
+        used.push(c.last_mint_storage_bytes);
+        let cost = env::storage_byte_cost().saturating_mul(c.last_mint_storage_bytes as u128);
+        let expected = deposit.saturating_sub(PRICE).saturating_sub(cost);
+        assert!(
+            transfers().contains(&(accounts(1), expected)),
+            "mint {i}: refund should be {expected}"
+        );
+    }
+    println!("bytes per mint: {used:?}");
 }
 
 #[test]

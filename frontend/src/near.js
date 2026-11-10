@@ -4,6 +4,7 @@ import { setupOKXWallet } from '@near-wallet-selector/okx-wallet';
 import { setupMeteorWallet } from '@near-wallet-selector/meteor-wallet';
 import { setupHotWallet } from '@near-wallet-selector/hot-wallet';
 import '@near-wallet-selector/modal-ui/styles.css';
+import { setupEthereumModule } from './eth.js';
 
 export const NETWORK_ID = import.meta.env.VITE_NETWORK_ID || 'testnet';
 export const CONTRACT_ID = import.meta.env.VITE_CONTRACT_ID || 'seed-nft.your-account.testnet';
@@ -59,6 +60,8 @@ export async function initWallet() {
       setupOKXWallet(), // OKX Wallet 瀏覽器擴充（window.okxwallet.near，僅桌面版）
       setupMeteorWallet(),
       setupHotWallet(),
+      // MetaMask 等 Ethereum 錢包（0x eth-implicit 帳戶，NEP-518）
+      await setupEthereumModule(NETWORK_ID),
     ],
   });
   const modal = setupModal(selector, {

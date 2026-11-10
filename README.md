@@ -6,7 +6,7 @@ p5.js viewer 讀 `?seed=` 畫出確定性的作品：同一個 seed 一定畫出
 ```
 seed-nft/
 ├─ contract/   Rust 合約：NEP-171 / 177 / 178 / 181 + NEP-199 版稅（nft_payout）
-├─ frontend/   Vite + NEAR Wallet Selector（OKX Wallet、Meteor、HOT）
+├─ frontend/   Vite + NEAR Wallet Selector（OKX Wallet、Meteor、HOT、Ethereum 錢包）
 ├─ viewer/     p5.js 展示頁（p5.min.js 已打包在同資料夾，可整包上傳 IPFS）
 └─ metadata/   reference JSON 範例
 ```
@@ -48,8 +48,13 @@ cargo --version && cargo near --version && near --version
    $env:CARGO_TARGET_DIR = "$HOME\.cache\seednft-target"      # PowerShell
    ```
 2. **`cargo test` 需要組譯器**：測試在 Windows 主機上編譯，`getrandom` 會呼叫 `dlltool`，而 `dlltool` 需要 `as.exe`，
-   Rust 的 GNU 工具鏈沒有附。要在 Windows 跑 unit tests，需另外裝一套 mingw-w64（例如 `winget install BrechtSanders.WinLibs.POSIX.UCRT`）
-   並讓它的 `bin` 在 PATH 上；或改用 WSL2 / GitHub Actions（Linux）跑測試。**wasm 建置不受影響。**
+   Rust 的 GNU 工具鏈沒有附。要另外裝 mingw-w64（已驗證 WinLibs）：
+   ```powershell
+   winget install --id BrechtSanders.WinLibs.POSIX.UCRT -e --scope user
+   ```
+   裝完重開終端機；如果 `where as` 找不到，把
+   `%LOCALAPPDATA%\Microsoft\WinGet\Packages\BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\mingw64\bin`
+   加到 PATH。**wasm 建置不需要它。**
 
 ---
 
@@ -73,8 +78,11 @@ cargo test
 ```
 
 測試涵蓋：mint 後的 owner / metadata / seed 格式、mint 給別人、50 次 mint 的 seed 唯一性（含相同 random_seed 的情況）、
-超過 max supply 失敗、押金不足價格失敗、押金不足 storage 失敗、多附押金退還且價格轉給 owner、剛好的押金不退款、
-`nft_payout` 版稅分配、`nft_transfer_payout` 轉移。
+超過 max supply 失敗、押金不足價格失敗、押金不足 storage 失敗、多附押金退還且價格轉給 owner、
+每次 mint 依實際 storage 用量退款、`nft_payout` 版稅分配、`nft_transfer_payout` 轉移。10 個全部通過。
+
+每個 token 實際用掉約 540–690 bytes（約 0.0054–0.0069 NEAR）：同一個 owner 的第二個 token 不用再建 enumeration 集合，
+所以用得比較少。這也是為什麼前端多附 0.05 NEAR、由合約依實際用量退回，而不是附一個剛好的固定值。
 
 ### 主要方法
 
@@ -171,12 +179,34 @@ npm run build                   # 產出 dist/
 - Mint 時附 `mint_price + VITE_STORAGE_BUFFER_NEAR`（預設 0.05 NEAR），合約會退回多的部分。
 - **尚未實測**：OKX 擴充是否能在 testnet 簽交易（手邊沒有裝擴充的環境）。如果 OKX 只支援 mainnet，testnet demo 用 Meteor / HOT，OKX 等上 mainnet 再展示。
 
+### Ethereum 錢包（MetaMask 等）
+
+用官方 `@near-wallet-selector/ethereum-wallets`（NEP-518），設定在 [`frontend/src/eth.js`](frontend/src/eth.js)。
+MetaMask 使用者的 NEAR 帳號就是自己的 `0x...` 地址（eth-implicit 帳戶），NFT 一樣 mint 在 NEAR 合約上。
+
+- 錢包會被要求切到「NEAR Protocol Testnet」EVM 網路：chain id **398**，RPC `https://eth-rpc.testnet.near.org`
+  （mainnet 是 397 / `https://eth-rpc.mainnet.near.org`）。第一次會跳出新增網路的確認。
+- **不填 `VITE_REOWN_PROJECT_ID`**：只支援瀏覽器擴充（injected，例如 MetaMask），不需要任何金鑰。
+- **填 `VITE_REOWN_PROJECT_ID`**（到 cloud.reown.com 免費申請）：多載入 Reown AppKit，支援 WalletConnect / 手機錢包 / 錢包清單。
+  記得在 Reown 後台把你的網域（含 `localhost` 與 Vercel 網址）加入 allowlist。
+- 限制：
+  - 該 `0x` 帳戶在 NEAR testnet 上要有 NEAR 才能付價格和 storage。可以從其他 testnet 帳號轉 NEAR 給 `0x...` 帳號
+    （例如 `near tokens my-nft.testnet send-near 0xabc... '1 NEAR' network-config testnet sign-with-keychain send`）。
+  - 第一次交易前會做 relayer onboarding（加一把 FunctionCall access key），所以會多一筆簽名。
+  - NEP-518 一筆交易只能有一個 action，多個 action 會拆成多筆依序送出（`nft_mint` 只有一個 action，不受影響）。
+  - 只支援 EOA，不支援 smart account（Safe、email / social 登入）。
+  - **尚未實測**：我們只確認選單出現「Ethereum Wallet」與 build 成功，還沒用真的 MetaMask 在 testnet 走完 mint。
+- **Temple 的 Etherlink EVM 帳戶：未驗證。** 理論上任何注入 `window.ethereum` 的 EVM 錢包都能走 injected connector；
+  Temple 的 EVM 帳戶要能用，前提是 Temple 有注入 EIP-1193 provider，並且接受新增 chain id 398 這個自訂網路
+  （Etherlink 是另一條鏈，chain id 不同，這裡用不到 Etherlink 本身）。同一把私鑰在兩條鏈上的 `0x` 地址相同，
+  所以連上後的 NEAR 帳號會跟 Etherlink 地址一樣。需要有裝 Temple 的瀏覽器才能實測。
+
 ### 部署到 Vercel
 
 1. 把 repo 推到 GitHub（目前還沒公開，要公開前先確認）。
 2. Vercel → New Project → 選 repo，**Root Directory 設 `frontend`**，Framework 選 Vite（Build `npm run build`、Output `dist`）。
    保持「Include source files outside of the Root Directory」開啟，因為 build 會讀 `../viewer`。
-3. 在 Environment Variables 加 `VITE_NETWORK_ID`、`VITE_CONTRACT_ID`、`VITE_VIEWER_URL`（可選）。
+3. 在 Environment Variables 加 `VITE_NETWORK_ID`、`VITE_CONTRACT_ID`，以及選填的 `VITE_VIEWER_URL`、`VITE_REOWN_PROJECT_ID`。
 4. Deploy。
 
 ---
