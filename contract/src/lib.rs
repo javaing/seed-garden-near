@@ -10,6 +10,7 @@ use near_contract_standards::non_fungible_token::core::{
     NonFungibleTokenCore, NonFungibleTokenResolver,
 };
 use near_contract_standards::non_fungible_token::enumeration::NonFungibleTokenEnumeration;
+use near_contract_standards::non_fungible_token::events::NftMint;
 use near_contract_standards::non_fungible_token::metadata::{
     NFTContractMetadata, NonFungibleTokenMetadataProvider, TokenMetadata,
 };
@@ -150,6 +151,14 @@ impl Contract {
             .internal_mint_with_refund(token_id, owner, Some(token_metadata), None);
         let storage_used = env::storage_usage().saturating_sub(storage_before);
         self.last_mint_storage_bytes = storage_used;
+
+        // internal_mint_with_refund 不會發 NEP-171 事件，indexer / 市場要靠這個 log 才看得到新 token。
+        NftMint {
+            owner_id: &token.owner_id,
+            token_ids: &[&token.token_id],
+            memo: None,
+        }
+        .emit();
 
         let storage_cost = env::storage_byte_cost().saturating_mul(storage_used as u128);
         let required = self.mint_price.saturating_add(storage_cost);

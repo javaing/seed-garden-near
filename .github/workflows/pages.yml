@@ -34,11 +34,18 @@ jobs:
       - name: Build (base = /<repo>/)
         working-directory: frontend
         env:
-          VITE_NETWORK_ID: ${{ vars.VITE_NETWORK_ID || 'testnet' }}
-          VITE_CONTRACT_ID: ${{ vars.VITE_CONTRACT_ID }}
-          VITE_VIEWER_URL: ${{ vars.VITE_VIEWER_URL }}
-          VITE_REOWN_PROJECT_ID: ${{ vars.VITE_REOWN_PROJECT_ID }}
-        run: npm run build -- --base=/${{ github.event.repository.name }}/
+          V_NETWORK_ID: ${{ vars.VITE_NETWORK_ID }}
+          V_CONTRACT_ID: ${{ vars.VITE_CONTRACT_ID }}
+          V_VIEWER_URL: ${{ vars.VITE_VIEWER_URL }}
+          V_REOWN_PROJECT_ID: ${{ vars.VITE_REOWN_PROJECT_ID }}
+        run: |
+          # 只把有設定的 Variables 寫進 .env.production.local；沒設定就沿用 repo 裡的 .env.production
+          : > .env.production.local
+          for k in NETWORK_ID CONTRACT_ID VIEWER_URL REOWN_PROJECT_ID; do
+            v=$(printenv "V_$k" || true)
+            if [ -n "$v" ]; then echo "VITE_$k=$v" >> .env.production.local; fi
+          done
+          npm run build -- --base=/${{ github.event.repository.name }}/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist

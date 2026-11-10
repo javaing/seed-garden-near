@@ -80,6 +80,15 @@ fn mint_sets_owner_metadata_and_seed() {
     assert_eq!(seed.len(), 64);
     assert!(seed.chars().all(|c| c.is_ascii_hexdigit()));
 
+    // NEP-171 nft_mint 事件
+    let logs = near_sdk::test_utils::get_logs();
+    assert!(
+        logs.iter().any(|l| l.starts_with("EVENT_JSON:")
+            && l.contains("\"event\":\"nft_mint\"")
+            && l.contains("\"token_ids\":[\"1\"]")),
+        "missing nft_mint event: {logs:?}"
+    );
+
     assert_eq!(c.nft_total_supply(), U128(1));
     assert_eq!(c.nft_tokens_for_owner(accounts(1), None, None).len(), 1);
     assert_eq!(c.mint_info().minted, 1);

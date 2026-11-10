@@ -10,6 +10,7 @@ Built for the NEAR Hackathon, **`nfts` track — NFTs That Do Something**.
 
 - **Live demo:** https://javaing.github.io/seed-garden-near/
 - **Seed comparison demo:** https://javaing.github.io/seed-garden-near/examples/harmonious-donuts/grid.html
+- **Contract:** [`nft.seed-garden.testnet`](https://testnet.nearblocks.io/address/nft.seed-garden.testnet) (NEAR testnet)
 - **Network:** NEAR testnet only. No real funds.
 
 <a id="en"></a>
@@ -70,8 +71,8 @@ metadata/   reference JSON example
 | Contract wasm build | `cargo near build` succeeds (252 KB) |
 | Frontend build + wallet menu (OKX, Meteor, HOT, Ethereum) | Verified |
 | GitHub Pages demo | Deployed by CI on every push to `main` |
-| Contract deployed to testnet | Not yet. Until then the demo shows the art and examples, but Mint is disabled |
-| Real mint through OKX / MetaMask on testnet | Not tested yet |
+| Contract deployed to testnet | Live at `nft.seed-garden.testnet`; test mints #1 and #2 succeeded and emit the NEP-171 `nft_mint` event |
+| Mint through a browser wallet (OKX / Meteor / MetaMask) on the live page | Not tested yet (wallet connection verified) |
 
 ## Quick start
 
@@ -153,8 +154,8 @@ npm run dev                  # http://localhost:5173
 ### 6. Deploy the demo
 
 GitHub Pages is already set up: every push to `main` builds and deploys to
-https://javaing.github.io/seed-garden-near/. After deploying the contract, add `VITE_CONTRACT_ID`
-under **Settings → Secrets and variables → Actions → Variables** and re-run the workflow.
+https://javaing.github.io/seed-garden-near/. Public settings live in `frontend/.env.production`;
+GitHub Actions Variables with the same names (for example `VITE_CONTRACT_ID`) override them.
 Vercel also works: set the Root Directory to `frontend`.
 
 ## Wallet notes
@@ -191,6 +192,7 @@ p5.js is licensed under LGPL-2.1 (see `viewer/p5-LICENSE.txt`).
 
 - **線上 demo：** https://javaing.github.io/seed-garden-near/
 - **seed 比較範例：** https://javaing.github.io/seed-garden-near/examples/harmonious-donuts/grid.html
+- **合約：** [`nft.seed-garden.testnet`](https://testnet.nearblocks.io/address/nft.seed-garden.testnet)（NEAR testnet）
 - **網路：** 只在 NEAR testnet，不使用真實資金。
 
 ## 特色
@@ -233,8 +235,8 @@ metadata/   reference JSON 範例
 | 合約 wasm 建置 | `cargo near build` 成功（252 KB） |
 | 前端 build、錢包選單（OKX、Meteor、HOT、Ethereum） | 已驗證 |
 | GitHub Pages demo | 每次 push 到 `main` 由 CI 自動部署 |
-| 合約部署到 testnet | 尚未。部署前 demo 可看作品與範例，但 Mint 按鈕不能按 |
-| 用 OKX / MetaMask 在 testnet 實際 mint | 尚未實測 |
+| 合約部署到 testnet | 已部署 `nft.seed-garden.testnet`；測試 mint #1、#2 成功，並發出 NEP-171 `nft_mint` 事件 |
+| 在線上頁面用瀏覽器錢包（OKX / Meteor / MetaMask）mint | 尚未實測（錢包連線已確認） |
 
 <a id="zh-toolchain"></a>
 
@@ -412,8 +414,8 @@ MetaMask 使用者的 NEAR 帳號就是自己的 `0x...` 地址（eth-implicit �
 **https://javaing.github.io/seed-garden-near/**（範例頁在 `/examples/harmonious-donuts/grid.html`）。
 
 1. repo **Settings → Pages → Build and deployment → Source** 選 **GitHub Actions**（已完成）。
-2. 合約部署後，到 **Settings → Secrets and variables → Actions → Variables** 新增 `VITE_CONTRACT_ID`
-   （選填 `VITE_NETWORK_ID`、`VITE_VIEWER_URL`、`VITE_REOWN_PROJECT_ID`），再到 **Actions** 對「Deploy demo to GitHub Pages」按 **Run workflow**。
+2. 公開設定寫在 `frontend/.env.production`（目前 `VITE_CONTRACT_ID=nft.seed-garden.testnet`）。
+   要覆蓋時，到 **Settings → Secrets and variables → Actions → Variables** 新增同名變數（例如 `VITE_REOWN_PROJECT_ID`），再按 **Run workflow**。
    這些都是公開值，用 Variables 不用 Secrets。
 
 本機模擬 Pages 的子路徑：`npm run build -- --base=/seed-garden-near/ && npx vite preview --base=/seed-garden-near/`
