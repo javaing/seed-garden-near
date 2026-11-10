@@ -107,8 +107,14 @@ async function loadTokens() {
   }
 }
 
+// implicit 帳號（64 hex）與 0x 帳號很長，頁首只顯示頭尾，完整帳號放在 tooltip
+function shortAccount(id) {
+  return id.length > 24 ? `${id.slice(0, 8)}…${id.slice(-6)}` : id;
+}
+
 function render() {
-  els.account.textContent = accountId || '未連線';
+  els.account.textContent = accountId ? shortAccount(accountId) : '未連線';
+  els.account.title = accountId || '';
   els.connect.hidden = !!accountId;
   els.disconnect.hidden = !accountId;
   const soldOut = mintInfo && mintInfo.minted >= mintInfo.max_supply;
