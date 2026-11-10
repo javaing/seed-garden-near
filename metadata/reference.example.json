@@ -1,0 +1,8 @@
+{
+  "description": "Seed Garden — 每個 token 的 seed 在 mint 時由 NEAR 鏈上隨機值決定，作品以 p5.js 依 seed 即時繪製。",
+  "animation_url": "ipfs://<VIEWER_CID>/index.html",
+  "animation_url_param": "seed",
+  "seed_location": "token.metadata.extra.seed",
+  "external_url": "https://<your-vercel-app>.vercel.app",
+  "license": "CC BY-NC 4.0"
+}

@@ -1,0 +1,25 @@
+{
+  "name": "seed-nft-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "copy-viewer": "node scripts/copy-viewer.mjs",
+    "dev": "npm run copy-viewer && vite",
+    "build": "npm run copy-viewer && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@near-wallet-selector/core": "^10.1.4",
+    "@near-wallet-selector/hot-wallet": "^10.1.4",
+    "@near-wallet-selector/meteor-wallet": "^10.1.4",
+    "@near-wallet-selector/modal-ui": "^10.1.4",
+    "@near-wallet-selector/okx-wallet": "^10.1.4",
+    "buffer": "^6.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "vite": "^8.3.7"
+  }
+}

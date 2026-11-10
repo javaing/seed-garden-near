@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Harmonious donuts</title>
+  <link rel="stylesheet" href="./style.css" />
+  <!-- 取代原本 fxhash snippet：?seed=<hex>（NEAR）或 ?fxhash=<base58>（原作） -->
+  <script src="./seed-shim.js"></script>
+  <script src="./p5.min.js"></script>
+</head>
+<body>
+  <script src="./sketch.js"></script>
+  <!-- 原作的 bundle.js 會先消耗 6 次 fxrand()，保留它才能讓亂數順序與 fxhash 上一致 -->
+  <script defer src="./bundle.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Seed Grid</title>
+  <style>
+    :root { --bg: #f4f2ec; --fg: #1d1c20; --muted: #6a6770; --card: #fff; --line: #dfdbd2; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #121216; --fg: #ebeaf0; --muted: #9a97a2; --card: #1b1b22; --line: #2c2b34; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg);
+      font: 14px/1.5 system-ui, "Segoe UI", "Noto Sans TC", sans-serif; }
+    header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-bottom: 16px; }
+    h1 { font-size: 18px; margin: 0; }
+    button, label { font: inherit; }
+    button { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+    .cell { background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+    .cell iframe { display: block; width: 100%; aspect-ratio: 1; border: 0; background: #fff; }
+    .info { padding: 6px 10px; font-size: 12px; color: var(--muted); }
+    .info code { color: var(--fg); font-family: ui-monospace, Consolas, monospace; overflow-wrap: anywhere; }
+    .info a { color: inherit; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Harmonious donuts × NEAR seed</h1>
+    <button id="reroll">重新抽 seed</button>
+    <label><input type="checkbox" id="sunday" /> Sunday 模式</label>
+    <button id="original">看 fxhash 原作 #47</button>
+    <span style="color:var(--muted)">每格是一個模擬的 mint seed；同一個 seed 重新整理會得到一樣的圖。</span>
+  </header>
+  <section class="grid" id="grid"></section>
+
+  <script>
+    const ORIGINAL_FXHASH = 'opN9dTfXxiQrYKu2swfYFurAJQCqcniniWgzXBjjb4RaJXZYWaR';
+    const grid = document.getElementById('grid');
+    const sunday = document.getElementById('sunday');
+
+    function randomSeed() {
+      const b = new Uint8Array(32);
+      crypto.getRandomValues(b);
+      return [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+    }
+
+    function cell(query, label) {
+      const el = document.createElement('div');
+      el.className = 'cell';
+      const f = document.createElement('iframe');
+      f.title = label;
+      const url = './index.html?' + query + (sunday.checked ? '&sunday=1' : '');
+      f.src = url;
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.innerHTML = '<code></code><div class="feat">…</div><a target="_blank">單獨開啟</a>';
+      info.querySelector('code').textContent = label;
+      info.querySelector('a').href = url;
+      f.addEventListener('load', () => {
+        // 同源 iframe，直接讀 sketch 設定的特徵
+        setTimeout(() => {
+          const feats = f.contentWindow.$fxhashFeatures;
+          info.querySelector('.feat').textContent = feats
+            ? Object.entries(feats).map(([k, v]) => `${k}: ${v}`).join(' ・ ')
+            : '';
+        }, 300);
+      });
+      el.append(f, info);
+      return el;
+    }
+
+    function render(seeds) {
+      grid.replaceChildren(...seeds.map((s) => cell('seed=' + s, s.slice(0, 16) + '…')));
+      history.replaceState(null, '', '?seeds=' + seeds.join(','));
+    }
+
+    const fromUrl = new URLSearchParams(location.search).get('seeds');
+    let seeds = fromUrl ? fromUrl.split(',').filter(Boolean) : Array.from({ length: 9 }, randomSeed);
+    render(seeds);
+
+    document.getElementById('reroll').onclick = () => { seeds = Array.from({ length: 9 }, randomSeed); render(seeds); };
+    sunday.onchange = () => render(seeds);
+    document.getElementById('original').onclick = () => {
+      grid.replaceChildren(cell('fxhash=' + ORIGINAL_FXHASH, 'fxhash ' + ORIGINAL_FXHASH.slice(0, 14) + '…'));
+    };
+  </script>
+</body>
+</html>

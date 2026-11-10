@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Seed Garden</title>
+</head>
+<body>
+  <header class="bar">
+    <h1>Seed Garden</h1>
+    <div class="who">
+      <span class="pill" id="network"></span>
+      <span id="account">未連線</span>
+      <button id="connect">連線錢包</button>
+      <button id="disconnect" class="ghost" hidden>斷線</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <iframe id="demo" title="範例作品"></iframe>
+      <div>
+        <p class="lede">每個 NFT 在 mint 時由鏈上隨機值產生獨一無二的 seed，作品用 p5.js 依 seed 即時繪製。</p>
+        <p class="muted">合約 <code id="contract"></code></p>
+        <p id="mint-info" class="muted">讀取中…</p>
+        <button id="mint" class="primary" disabled>Mint</button>
+        <p id="status" role="status"></p>
+      </div>
+    </section>
+
+    <h2>我的 token</h2>
+    <section id="tokens" class="grid"></section>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

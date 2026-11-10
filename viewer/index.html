@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Seed Garden Viewer</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0b0b10; overflow: hidden; }
+    body { display: flex; align-items: center; justify-content: center; }
+    canvas { display: block; }
+    #seed {
+      position: fixed; left: 8px; bottom: 6px; font: 11px/1.2 ui-monospace, monospace;
+      color: rgba(255,255,255,.45); pointer-events: none; user-select: none;
+    }
+    body.clean #seed { display: none; }
+  </style>
+  <!-- 在 sandbox iframe（opaque origin）裡讀 localStorage 會丟 SecurityError，p5 因此無法啟動；換成記憶體版 -->
+  <script>
+    (function () {
+      try { window.localStorage.getItem('x'); return; } catch (e) {}
+      var mem = {};
+      var shim = {
+        getItem: function (k) { return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
+        setItem: function (k, v) { mem[k] = String(v); },
+        removeItem: function (k) { delete mem[k]; },
+        clear: function () { mem = {}; },
+        key: function (i) { return Object.keys(mem)[i] || null; },
+        get length() { return Object.keys(mem).length; }
+      };
+      try { Object.defineProperty(window, 'localStorage', { value: shim, configurable: true }); } catch (e) {}
+      try { Object.defineProperty(window, 'sessionStorage', { value: shim, configurable: true }); } catch (e) {}
+    })();
+  </script>
+  <!-- 本地打包的 p5，整個資料夾可直接上傳 IPFS，不依賴 CDN -->
+  <script src="./p5.min.js"></script>
+</head>
+<body>
+  <div id="seed"></div>
+  <script src="./sketch.js"></script>
+</body>
+</html>

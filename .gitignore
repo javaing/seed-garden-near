@@ -1,0 +1,6 @@
+contract/target
+frontend/node_modules
+frontend/dist
+frontend/public/viewer
+frontend/.env.local
+**/.vite
