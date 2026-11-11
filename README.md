@@ -19,16 +19,17 @@ Built for the NEAR Hackathon, **`nfts` track — NFTs That Do Something**.
 
 - **On-chain seed.** `nft_mint` derives a seed from `env::random_seed()` and stores it in the token metadata
   (`TokenMetadata.extra = {"seed":"<64 hex>"}`). Nobody, including the artist, picks the outcome in advance.
-- **The artwork is code.** A small p5.js viewer reads `?seed=` and draws the piece in the browser.
-  The viewer folder ships its own `p5.min.js` (no CDN), so the whole folder can be pinned to IPFS and keeps working.
+- **The artwork is code.** The live collection renders *Harmonious donuts*, the artist's p5.js piece first released on fxhash,
+  adapted to read NEAR seeds (`examples/harmonious-donuts/`). A second piece, a flow field (`viewer/`), shows that any p5.js sketch can plug in.
+  Each artwork folder ships its own `p5.min.js` (no CDN), so it can be pinned to IPFS and keeps working.
 - **Full NEAR NFT standards.** NEP-171 core, NEP-177 metadata, NEP-178 approvals, NEP-181 enumeration,
   and NEP-199 royalties (`nft_payout`, `nft_transfer_payout`), so marketplaces can list tokens and pay royalties.
 - **Fair, self-refunding mint.** Configurable price and max supply. The contract measures the storage each mint
   actually uses, charges only that, and refunds the rest of the deposit in the same call.
 - **Many wallets, including Ethereum users.** NEAR Wallet Selector with OKX Wallet, Meteor, HOT, and
   **Ethereum wallets (MetaMask) via NEP-518**: an Ethereum user mints on NEAR with their own `0x…` address as the NEAR account.
-- **Bring your own generative art.** `examples/harmonious-donuts/` ports an existing fxhash project to NEAR seeds
-  with a tiny compatibility shim, and `grid.html` compares 9 seeds side by side.
+- **Bring your own generative art.** A tiny shim gives fxhash-era sketches the same `fxrand()` API backed by NEAR seeds,
+  so existing work moves over almost unchanged; `grid.html` compares 9 seeds side by side.
 
 ## How it works
 
@@ -130,7 +131,7 @@ The owner can change the price later with `set_mint_price` (the live contract cu
 
 ### 4. Pin the viewer to IPFS
 
-Upload the `viewer/` folder to Pinata (or any pinning service) as a folder to get `VIEWER_CID`.
+Upload the artwork folder (`examples/harmonious-donuts/`, or `viewer/` for the flow field) to Pinata (or any pinning service) as a folder to get `VIEWER_CID`.
 Replace `<VIEWER_CID>` in `metadata/reference.example.json`, save it as `reference.json`, and upload it together with a
 `preview.png` (press `s` in the viewer to save one) to get `META_CID`.
 Note: `ipfs.io` no longer serves raw files to scripts; use a gateway such as `gateway.pinata.cloud`.
@@ -148,7 +149,7 @@ npm run dev                  # http://localhost:5173
 | --- | --- |
 | `VITE_NETWORK_ID` | `testnet` (default) or `mainnet` |
 | `VITE_CONTRACT_ID` | Deployed contract account |
-| `VITE_VIEWER_URL` | Optional. IPFS viewer URL; defaults to the bundled `viewer/` |
+| `VITE_VIEWER_URL` | Optional. IPFS artwork URL; defaults to the bundled `examples/harmonious-donuts/index.html` |
 | `VITE_REOWN_PROJECT_ID` | Optional. Enables WalletConnect / mobile wallets for Ethereum users |
 | `VITE_STORAGE_BUFFER_NEAR` | Extra deposit sent with mint (default 0.02); the unused part is refunded |
 
@@ -199,7 +200,7 @@ p5.js is licensed under LGPL-2.1 (see `viewer/p5-LICENSE.txt`).
 ## 特色
 
 - **鏈上 seed**：`nft_mint` 由 `env::random_seed()` 產生 seed，存在 `TokenMetadata.extra`（`{"seed":"<64 hex>"}`）。包括作者在內，沒有人能事先決定結果。
-- **作品就是程式**：p5.js viewer 讀 `?seed=` 在瀏覽器即時繪製。`viewer/` 自帶 `p5.min.js`（不用 CDN），整個資料夾上傳 IPFS 就能一直運作。
+- **作品就是程式**：線上系列使用作者在 fxhash 發表過的 p5.js 作品 *Harmonious donuts*，改成讀 NEAR seed（`examples/harmonious-donuts/`）；另一款流線作品（`viewer/`）示範任何 p5.js 作品都能接上。每個作品資料夾自帶 `p5.min.js`（不用 CDN），上傳 IPFS 就能一直運作。
 - **完整 NEAR NFT 標準**：NEP-171 core、NEP-177 metadata、NEP-178 approval、NEP-181 enumeration、NEP-199 版稅（`nft_payout`、`nft_transfer_payout`）。
 - **公平且自動退款的 mint**：可設定價格與 max supply。合約量測每次 mint 實際用掉的 storage，只收那部分，多附的押金在同一筆交易退回。
 - **多種錢包，包含 Ethereum 使用者**：NEAR Wallet Selector 支援 OKX Wallet、Meteor、HOT，以及透過 NEP-518 的 **Ethereum 錢包（MetaMask）**：Ethereum 使用者直接用自己的 `0x…` 地址當 NEAR 帳號 mint。
@@ -360,7 +361,7 @@ near contract call-function as-transaction seed.my-nft.testnet nft_mint json-arg
 ## 4. 上傳 viewer 與 metadata 到 IPFS（Pinata）
 
 1. 本機先看 viewer：用任何靜態伺服器開 `viewer/`，例如 `npx serve viewer`，打開 `http://localhost:3000/?seed=abc123...`。按 `s` 可存 PNG，可拿來當 `preview.png`。
-2. 到 [Pinata](https://app.pinata.cloud) → Upload → **Folder**，選整個 `viewer/` 資料夾 → 得到 `VIEWER_CID`。
+2. 到 [Pinata](https://app.pinata.cloud) → Upload → **Folder**，選作品資料夾（`examples/harmonious-donuts/`，或流線版的 `viewer/`）→ 得到 `VIEWER_CID`。
    確認 `https://gateway.pinata.cloud/ipfs/<VIEWER_CID>/index.html?seed=00ff...` 能正常顯示。
 3. 複製 `metadata/reference.example.json` 成 `reference.json`，把 `<VIEWER_CID>` 換掉；
    和 `preview.png` 放同一個資料夾，再用 Pinata 上傳這個資料夾 → 得到 `META_CID`。
@@ -378,7 +379,7 @@ npm run dev                     # http://localhost:5173
 npm run build                   # 產出 dist/
 ```
 
-- `npm run dev` / `build` 會先把 `../viewer` 和 `../examples` 複製到 `public/`，所以 token 卡片的 iframe 預設用本站的 `viewer/index.html`。
+- `npm run dev` / `build` 會先把 `../viewer` 和 `../examples` 複製到 `public/`，token 卡片的 iframe 預設用本站的 `examples/harmonious-donuts/index.html`。
   上傳 IPFS 後把 `VITE_VIEWER_URL` 設成 `https://<gateway>/ipfs/<VIEWER_CID>/index.html`。
 - 錢包：`@near-wallet-selector/okx-wallet`（官方 module，讀 `window.okxwallet.near`，**只在桌面瀏覽器出現**）、Meteor、HOT、Ethereum 錢包。
   OKX 模組直接用全域 `Buffer`，所以 `src/polyfills.js` 補上。

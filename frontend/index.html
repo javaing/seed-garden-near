@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -10,30 +10,33 @@
     <h1>Seed Garden</h1>
     <div class="who">
       <span class="pill" id="network"></span>
-      <span id="account">未連線</span>
-      <button id="connect">連線錢包</button>
-      <button id="disconnect" class="ghost" hidden>斷線</button>
+      <span id="account">Not connected</span>
+      <button id="connect">Connect wallet</button>
+      <button id="disconnect" class="ghost" hidden>Disconnect</button>
     </div>
   </header>
 
   <main>
     <section class="hero">
-      <iframe id="demo" title="範例作品"></iframe>
+      <iframe id="demo" title="Sample artwork"></iframe>
       <div>
-        <p class="lede">每個 NFT 在 mint 時由鏈上隨機值產生獨一無二的 seed，作品用 p5.js 依 seed 即時繪製。</p>
-        <p class="muted">合約 <code id="contract"></code></p>
-        <p id="mint-info" class="muted">讀取中…</p>
+        <p class="lede">Generative art that lives on NEAR. Each NFT gets a unique seed from on-chain randomness at mint, and the artwork, <em>Harmonious donuts</em>, is drawn live in p5.js from that seed. Same seed, same art, forever.</p>
+        <p class="muted">Works with NEAR wallets (OKX, Meteor, HOT) and Ethereum wallets like MetaMask; the NFT is always minted on NEAR.</p>
+        <p class="muted">Contract <code id="contract"></code></p>
+        <p id="mint-info" class="muted">Loading…</p>
         <button id="mint" class="primary" disabled>Mint</button>
         <p id="status" role="status"></p>
       </div>
     </section>
 
-    <h2>我的 token</h2>
+    <h2>My tokens</h2>
     <section id="tokens" class="grid"></section>
 
     <footer class="muted foot">
-      範例：<a href="examples/harmonious-donuts/grid.html">Harmonious donuts × NEAR seed（一次比較 9 個 seed）</a>
-      ・ <a href="viewer/index.html?seed=5eed0123456789abcdef0123456789abcdef0123456789abcdefcafe1234ba5e">全螢幕 viewer</a>
+      Explore: <a href="examples/harmonious-donuts/grid.html">Compare 9 random seeds</a>
+      · <a href="examples/harmonious-donuts/index.html?seed=5eed0123456789abcdef0123456789abcdef0123456789abcdefcafe1234ba5e">Full-screen view</a>
+      · <a href="viewer/index.html?seed=5eed0123456789abcdef0123456789abcdef0123456789abcdefcafe1234ba5e">Alternative artwork: flow field</a>
+      · <a href="https://github.com/javaing/seed-garden-near">Source on GitHub</a>
     </footer>
   </main>
 

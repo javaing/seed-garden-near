@@ -74,6 +74,7 @@ export async function viewAccount(accountId) {
 export async function initWallet() {
   const selector = await setupWalletSelector({
     network: NETWORK_ID,
+    languageCode: 'en', // 錢包選單固定英文（預設跟隨瀏覽器語言；modal 會讀這個設定）
     // 讓 store 記住 contract，OKX 模組送交易時需要
     createAccessKeyFor: { contractId: CONTRACT_ID, methodNames: [] },
     modules: [
@@ -87,7 +88,7 @@ export async function initWallet() {
   const modal = setupModal(selector, {
     contractId: CONTRACT_ID,
     theme: 'auto',
-    description: '選擇錢包連線到 NEAR ' + NETWORK_ID,
+    description: 'Choose a wallet to connect to NEAR ' + NETWORK_ID,
   });
   return { selector, modal };
 }

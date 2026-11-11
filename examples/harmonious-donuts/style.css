@@ -17,3 +17,11 @@ canvas {
   transform: translate(-50%, -50%);
   object-fit: contain;
 }
+
+/* NEAR 版：畫布固定 800×800 內部解析度，用 CSS 縮放到視窗大小，
+   同一個 seed 在任何尺寸看起來都一樣；嵌入 iframe 也不會變小。 */
+body { background-color: #000; }
+canvas {
+  width: min(100vw, 100vh) !important;
+  height: min(100vw, 100vh) !important;
+}

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -27,10 +27,10 @@
 <body>
   <header>
     <h1>Harmonious donuts × NEAR seed</h1>
-    <button id="reroll">重新抽 seed</button>
-    <label><input type="checkbox" id="sunday" /> Sunday 模式</label>
-    <button id="original">看 fxhash 原作 #47</button>
-    <span style="color:var(--muted)">每格是一個模擬的 mint seed；同一個 seed 重新整理會得到一樣的圖。</span>
+    <button id="reroll">Roll new seeds</button>
+    <label><input type="checkbox" id="sunday" /> Sunday mode</label>
+    <button id="original">Original fxhash token #47</button>
+    <span style="color:var(--muted)">Each tile is a simulated mint seed. Reloading the same seed always draws the same piece.</span>
   </header>
   <section class="grid" id="grid"></section>
 
@@ -51,10 +51,10 @@
       const f = document.createElement('iframe');
       f.title = label;
       const url = './index.html?' + query + (sunday.checked ? '&sunday=1' : '');
-      f.src = url;
+      f.src = url + '&embed=1'; // 格子裡點擊不下載 PNG；「Open full screen」保留原本行為
       const info = document.createElement('div');
       info.className = 'info';
-      info.innerHTML = '<code></code><div class="feat">…</div><a target="_blank">單獨開啟</a>';
+      info.innerHTML = '<code></code><div class="feat">…</div><a target="_blank">Open full screen</a>';
       info.querySelector('code').textContent = label;
       info.querySelector('a').href = url;
       f.addEventListener('load', () => {
@@ -62,7 +62,7 @@
         setTimeout(() => {
           const feats = f.contentWindow.$fxhashFeatures;
           info.querySelector('.feat').textContent = feats
-            ? Object.entries(feats).map(([k, v]) => `${k}: ${v}`).join(' ・ ')
+            ? Object.entries(feats).map(([k, v]) => `${k}: ${v}`).join(' · ')
             : '';
         }, 300);
       });

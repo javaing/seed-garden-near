@@ -55,3 +55,4 @@ button.ghost { background: transparent; }
 .card .meta { padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; }
 .foot { margin: 40px 0 16px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; }
 .foot a { color: inherit; }
+.grid > p { grid-column: 1 / -1; }

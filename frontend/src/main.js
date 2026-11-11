@@ -12,7 +12,7 @@ import {
 } from './near.js';
 
 const VIEWER_URL =
-  import.meta.env.VITE_VIEWER_URL || `${import.meta.env.BASE_URL}viewer/index.html`;
+  import.meta.env.VITE_VIEWER_URL || `${import.meta.env.BASE_URL}examples/harmonious-donuts/index.html`;
 const STORAGE_BUFFER = nearToYocto(import.meta.env.VITE_STORAGE_BUFFER_NEAR || '0.02');
 
 const $ = (id) => document.getElementById(id);
@@ -49,7 +49,8 @@ function seedOf(token) {
 
 function viewerSrc(seed) {
   const sep = VIEWER_URL.includes('?') ? '&' : '?';
-  return `${VIEWER_URL}${sep}seed=${encodeURIComponent(seed)}`;
+  // embed=1：嵌入時停用作品裡「點擊存 PNG」的行為
+  return `${VIEWER_URL}${sep}seed=${encodeURIComponent(seed)}&embed=1`;
 }
 
 function tokenCard(token) {
@@ -75,11 +76,11 @@ async function loadMintInfo() {
     mintInfo = await view('mint_info');
     const total = BigInt(mintInfo.price) + STORAGE_BUFFER;
     els.mintInfo.textContent =
-      `價格 ${yoctoToNear(mintInfo.price)} NEAR ・ 已 mint ${mintInfo.minted} / ${mintInfo.max_supply}` +
-      ` ・ 送出 ${yoctoToNear(total)} NEAR（含 storage 押金，多的會退）`;
+      `Price ${yoctoToNear(mintInfo.price)} NEAR · Minted ${mintInfo.minted} / ${mintInfo.max_supply}` +
+      ` · You send ${yoctoToNear(total)} NEAR (incl. storage deposit; unused part is refunded)`;
   } catch (e) {
     mintInfo = null;
-    els.mintInfo.textContent = `讀不到合約 ${CONTRACT_ID}：請確認已部署並設定 VITE_CONTRACT_ID`;
+    els.mintInfo.textContent = `Cannot read contract ${CONTRACT_ID}. Check that it is deployed and VITE_CONTRACT_ID is set.`;
     console.warn(e);
   }
   render();
@@ -88,7 +89,7 @@ async function loadMintInfo() {
 async function loadTokens() {
   els.tokens.replaceChildren();
   if (!accountId) {
-    els.tokens.innerHTML = '<p class="muted">連線錢包後顯示你持有的 token。</p>';
+    els.tokens.innerHTML = '<p class="muted">Connect a wallet to see the tokens you own.</p>';
     return;
   }
   try {
@@ -98,12 +99,12 @@ async function loadTokens() {
       limit: 50,
     });
     if (!tokens.length) {
-      els.tokens.innerHTML = '<p class="muted">還沒有 token，mint 一個吧。</p>';
+      els.tokens.innerHTML = '<p class="muted">No tokens yet. Mint one!</p>';
       return;
     }
     els.tokens.append(...tokens.reverse().map(tokenCard));
   } catch (e) {
-    els.tokens.innerHTML = '<p class="muted">讀取 token 失敗（合約可能還沒部署）。</p>';
+    els.tokens.innerHTML = '<p class="muted">Could not load tokens (is the contract deployed?).</p>';
     console.warn(e);
   }
 }
@@ -114,13 +115,13 @@ function shortAccount(id) {
 }
 
 function render() {
-  els.account.textContent = accountId ? shortAccount(accountId) : '未連線';
+  els.account.textContent = accountId ? shortAccount(accountId) : 'Not connected';
   els.account.title = accountId || '';
   els.connect.hidden = !!accountId;
   els.disconnect.hidden = !accountId;
   const soldOut = mintInfo && mintInfo.minted >= mintInfo.max_supply;
   els.mint.disabled = !accountId || !mintInfo || soldOut;
-  els.mint.textContent = soldOut ? '已售完' : 'Mint';
+  els.mint.textContent = soldOut ? 'Sold out' : 'Mint';
 }
 
 async function onMint() {
@@ -132,8 +133,8 @@ async function onMint() {
     const acct = await viewAccount(accountId);
     if (!acct) {
       setStatus(
-        `帳號 ${shortAccount(accountId)} 在 ${NETWORK_ID} 上不存在。` +
-          `請把錢包切到 ${NETWORK_ID}，或先轉一點 ${NETWORK_ID} NEAR 給這個帳號。`,
+        `Account ${shortAccount(accountId)} does not exist on ${NETWORK_ID}. ` +
+          `Switch your wallet to ${NETWORK_ID}, or send some ${NETWORK_ID} NEAR to this account first.`,
         'error',
       );
       return;
@@ -141,22 +142,22 @@ async function onMint() {
     const gasReserve = nearToYocto('0.01');
     if (BigInt(acct.amount) < deposit + gasReserve) {
       setStatus(
-        `${NETWORK_ID} 餘額 ${yoctoToNear(acct.amount)} NEAR，不夠 mint（需要約 ${yoctoToNear(deposit + gasReserve)} NEAR）。`,
+        `Your ${NETWORK_ID} balance is ${yoctoToNear(acct.amount)} NEAR; minting needs about ${yoctoToNear(deposit + gasReserve)} NEAR.`,
         'error',
       );
       return;
     }
-    setStatus('等待錢包簽署…');
+    setStatus('Waiting for wallet signature…');
     await mint(selector, deposit);
-    setStatus('Mint 成功！', 'ok');
+    setStatus('Minted! Your new token is below.', 'ok');
     await Promise.all([loadMintInfo(), loadTokens()]);
   } catch (e) {
     console.error(e);
     const msg = String(e?.message || e);
     const hint = /Exceeded \d+ providers/.test(msg)
-      ? `RPC 拒絕了這筆交易。常見原因：錢包目前在別的網路（請切到 ${NETWORK_ID}），或餘額不足。`
+      ? `The RPC rejected the transaction. Usually the wallet is on another network (switch to ${NETWORK_ID}) or the balance is too low.`
       : msg;
-    setStatus('Mint 失敗：' + hint, 'error');
+    setStatus('Mint failed: ' + hint, 'error');
   } finally {
     render();
   }
@@ -183,7 +184,7 @@ async function main() {
   els.disconnect.onclick = async () => {
     const wallet = await selector.wallet();
     await wallet.signOut();
-    setStatus('已斷線');
+    setStatus('Disconnected');
   };
   els.mint.onclick = onMint;
 
@@ -192,5 +193,5 @@ async function main() {
 
 main().catch((e) => {
   console.error(e);
-  setStatus('初始化失敗：' + e.message, 'error');
+  setStatus('Failed to initialize: ' + e.message, 'error');
 });
