@@ -23,6 +23,7 @@ const els = {
   network: $('network'),
   contract: $('contract'),
   account: $('account'),
+  balance: $('balance'),
   connect: $('connect'),
   disconnect: $('disconnect'),
   mint: $('mint'),
@@ -155,6 +156,29 @@ function shortAccount(id) {
   return id.length > 24 ? `${id.slice(0, 8)}…${id.slice(-6)}` : id;
 }
 
+let balanceRequest = 0;
+
+// 帳號下方顯示這個網路上的餘額（view_account 的 amount，未含 staking 鎖住的部分）
+async function loadBalance() {
+  const req = ++balanceRequest;
+  const owner = accountId;
+  if (!owner) {
+    els.balance.hidden = true;
+    return;
+  }
+  els.balance.hidden = false;
+  els.balance.textContent = '…';
+  try {
+    const acct = await viewAccount(owner);
+    if (req !== balanceRequest) return;
+    els.balance.textContent = acct ? `${yoctoToNear(acct.amount, 4)} NEAR` : `No ${NETWORK_ID} account`;
+  } catch (e) {
+    if (req !== balanceRequest) return;
+    els.balance.textContent = '';
+    console.warn(e);
+  }
+}
+
 function render() {
   els.account.textContent = accountId ? shortAccount(accountId) : 'Not connected';
   els.account.title = accountId || '';
@@ -191,7 +215,7 @@ async function onMint() {
     setStatus('Waiting for wallet signature…');
     await mint(selector, deposit);
     setStatus('Minted! Your new token is below.', 'ok');
-    await Promise.all([loadMintInfo(), loadTokens()]);
+    await Promise.all([loadMintInfo(), loadTokens(), loadBalance()]);
   } catch (e) {
     console.error(e);
     const msg = String(e?.message || e);
@@ -245,7 +269,10 @@ async function main() {
     const changed = next !== accountId;
     accountId = next;
     render();
-    if (changed || !els.tokens.hasChildNodes()) loadTokens();
+    if (changed || !els.tokens.hasChildNodes()) {
+      loadTokens();
+      loadBalance();
+    }
   };
   selector.store.observable.subscribe(syncAccount);
   syncAccount();

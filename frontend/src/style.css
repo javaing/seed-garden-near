@@ -62,3 +62,5 @@ button.ghost { background: transparent; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .banner { margin: 0; padding: 8px 16px; text-align: center; font-size: 14px; background: #7a4a00; color: #fff3df; }
 .card .meta a { font-size: 13px; }
+.acct { display: inline-flex; flex-direction: column; line-height: 1.2; }
+.acct .bal { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
