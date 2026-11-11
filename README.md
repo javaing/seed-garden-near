@@ -73,6 +73,7 @@ metadata/   reference JSON example
 | Frontend build + wallet menu (OKX, Meteor, HOT, Ethereum) | Verified |
 | GitHub Pages demo | Deployed by CI on every push to `main` |
 | Contract deployed to testnet | Live at `nft.seed-garden.testnet`; test mints #1 and #2 succeeded and emit the NEP-171 `nft_mint` event |
+| Testnet / Mainnet switch in the header | Done (mainnet contract not deployed yet) |
 | Mint through Meteor on the live page | Verified (token #3 minted by a Meteor testnet account) |
 | OKX Wallet on testnet | Not working: the extension signs with mainnet nonce/block hash, so the connect prompt hangs or the tx is rejected on testnet |
 | MetaMask (NEP-518) on testnet | Not working yet: onboarding tx fails with "Transaction execution error"; the `0x…` account has no wallet contract on testnet |
@@ -131,6 +132,30 @@ near contract call-function as-transaction seed.my-nft.testnet nft_mint json-arg
 `token_media` / `token_reference` can be `null` at first and set later with `set_token_links`.
 The owner can change the price later with `set_mint_price` (the live contract currently charges 0.01 NEAR).
 
+### 3b. Going to mainnet (real NEAR)
+
+The site has a **Testnet / Mainnet switch** in the header (also `?network=mainnet`). Until a mainnet
+contract is configured, the mainnet view says "not deployed yet" and minting is disabled.
+Deploying spends real NEAR, so run these yourself:
+
+1. Get a named mainnet account (for example `seed-garden.near`) in Meteor / MyNearWallet, and fund it with about **4 NEAR**
+   (the 254 KB contract locks ~2.6 NEAR of storage; the rest covers the sub-account and gas).
+2. Import it into the CLI: `near account import-account using-web-wallet network-config mainnet`
+3. Create the contract account and deploy (same init args as testnet, with `.near` names and your real price):
+
+```bash
+near account create-account fund-myself nft.seed-garden.near '3 NEAR' autogenerate-new-keypair save-to-keychain sign-as seed-garden.near network-config mainnet sign-with-keychain send
+```
+
+```bash
+near contract deploy nft.seed-garden.near use-file "$CARGO_TARGET_DIR/near/seed_nft.wasm" with-init-call new json-args '{"owner_id":"seed-garden.near","metadata":{"spec":"nft-1.0.0","name":"Seed Garden","symbol":"SEED","base_uri":null},"mint_price":"10000000000000000000000","max_supply":333,"royalties":{"seed-garden.near":500}}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' network-config mainnet sign-with-keychain send
+```
+
+4. Set the GitHub Actions Variable `VITE_CONTRACT_ID_MAINNET=nft.seed-garden.near` (or edit `frontend/.env`) and push.
+   Optionally set `VITE_NETWORK_ID=mainnet` to make mainnet the default.
+
+On mainnet, OKX and MetaMask (NEP-518) are expected to work, since their testnet issues come from testnet-specific gaps; verify before announcing.
+
 ### 4. Pin the viewer to IPFS
 
 Upload the artwork folder (`examples/harmonious-donuts/`, or `viewer/` for the flow field) to Pinata (or any pinning service) as a folder to get `VIEWER_CID`.
@@ -143,14 +168,14 @@ Note: `ipfs.io` no longer serves raw files to scripts; use a gateway such as `ga
 ```bash
 cd frontend
 npm install
-cp .env.example .env.local   # set VITE_CONTRACT_ID=seed.my-nft.testnet
+cp .env.example .env.local   # set VITE_CONTRACT_ID_TESTNET=seed.my-nft.testnet
 npm run dev                  # http://localhost:5173
 ```
 
 | Variable | Purpose |
 | --- | --- |
 | `VITE_NETWORK_ID` | `testnet` (default) or `mainnet` |
-| `VITE_CONTRACT_ID` | Deployed contract account |
+| `VITE_CONTRACT_ID_TESTNET` / `VITE_CONTRACT_ID_MAINNET` | Contract account per network (empty = not deployed there) |
 | `VITE_VIEWER_URL` | Optional. IPFS artwork URL; defaults to the bundled `examples/harmonious-donuts/index.html` |
 | `VITE_REOWN_PROJECT_ID` | Optional. Enables WalletConnect / mobile wallets for Ethereum users |
 | `VITE_STORAGE_BUFFER_NEAR` | Extra deposit sent with mint (default 0.02); the unused part is refunded |
@@ -158,8 +183,8 @@ npm run dev                  # http://localhost:5173
 ### 6. Deploy the demo
 
 GitHub Pages is already set up: every push to `main` builds and deploys to
-https://javaing.github.io/seed-garden-near/. Public settings live in `frontend/.env.production`;
-GitHub Actions Variables with the same names (for example `VITE_CONTRACT_ID`) override them.
+https://javaing.github.io/seed-garden-near/. Public settings live in `frontend/.env`;
+GitHub Actions Variables with the same names (for example `VITE_CONTRACT_ID_MAINNET`) override them.
 Vercel also works: set the Root Directory to `frontend`.
 
 ## Wallet notes
@@ -240,6 +265,7 @@ metadata/   reference JSON 範例
 | 前端 build、錢包選單（OKX、Meteor、HOT、Ethereum） | 已驗證 |
 | GitHub Pages demo | 每次 push 到 `main` 由 CI 自動部署 |
 | 合約部署到 testnet | 已部署 `nft.seed-garden.testnet`；測試 mint #1、#2 成功，並發出 NEP-171 `nft_mint` 事件 |
+| 頁首 Testnet / Mainnet 切換 | 完成（mainnet 合約尚未部署） |
 | 在線上頁面用 Meteor mint | 已驗證（Meteor testnet 帳號 mint 出 token #3） |
 | OKX Wallet 在 testnet | 不可用：擴充用 mainnet 的 nonce / block hash 簽，連線會卡住或交易被 testnet 拒絕 |
 | MetaMask（NEP-518）在 testnet | 尚未可用：onboarding 交易回 "Transaction execution error"，`0x…` 帳號在 testnet 沒有 wallet contract |
@@ -362,6 +388,27 @@ near contract call-function as-transaction seed.my-nft.testnet nft_mint json-arg
 
 還沒上傳 IPFS 也可以先部署，`token_media` / `token_reference` 給 `null`，之後用 `set_token_links` 補上（只影響之後 mint 的 token）。
 
+### 上 mainnet（真的 NEAR）
+
+網站頁首有 **Testnet / Mainnet 切換**（也可以用 `?network=mainnet`）。還沒設定 mainnet 合約前，mainnet 頁面會顯示「尚未部署」，不能 mint。
+部署會花真的 NEAR，請自己執行：
+
+1. 在 Meteor / MyNearWallet 準備一個 mainnet 具名帳號（例如 `seed-garden.near`），放大約 **4 NEAR**（254 KB 合約會鎖約 2.6 NEAR 的 storage，其餘是子帳號和 gas）。
+2. 匯入 CLI：`near account import-account using-web-wallet network-config mainnet`
+3. 建合約帳號並部署：
+
+```bash
+near account create-account fund-myself nft.seed-garden.near '3 NEAR' autogenerate-new-keypair save-to-keychain sign-as seed-garden.near network-config mainnet sign-with-keychain send
+```
+
+```bash
+near contract deploy nft.seed-garden.near use-file "$CARGO_TARGET_DIR/near/seed_nft.wasm" with-init-call new json-args '{"owner_id":"seed-garden.near","metadata":{"spec":"nft-1.0.0","name":"Seed Garden","symbol":"SEED","base_uri":null},"mint_price":"10000000000000000000000","max_supply":333,"royalties":{"seed-garden.near":500}}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' network-config mainnet sign-with-keychain send
+```
+
+4. 在 GitHub Actions Variables 設 `VITE_CONTRACT_ID_MAINNET=nft.seed-garden.near`（或改 `frontend/.env`）後 push。想讓預設就是 mainnet，再設 `VITE_NETWORK_ID=mainnet`。
+
+OKX 與 MetaMask（NEP-518）在 testnet 的問題是 testnet 特有的，mainnet 上預期可用，但公開前請先實測。
+
 ## 4. 上傳 viewer 與 metadata 到 IPFS（Pinata）
 
 1. 本機先看 viewer：用任何靜態伺服器開 `viewer/`，例如 `npx serve viewer`，打開 `http://localhost:3000/?seed=abc123...`。按 `s` 可存 PNG，可拿來當 `preview.png`。
@@ -378,7 +425,7 @@ near contract call-function as-transaction seed.my-nft.testnet nft_mint json-arg
 ```bash
 cd frontend
 npm install
-cp .env.example .env.local      # 填 VITE_CONTRACT_ID=seed.my-nft.testnet
+cp .env.example .env.local      # 填 VITE_CONTRACT_ID_TESTNET=seed.my-nft.testnet
 npm run dev                     # http://localhost:5173
 npm run build                   # 產出 dist/
 ```
@@ -421,7 +468,7 @@ MetaMask 使用者的 NEAR 帳號就是自己的 `0x...` 地址（eth-implicit �
 **https://javaing.github.io/seed-garden-near/**（範例頁在 `/examples/harmonious-donuts/grid.html`）。
 
 1. repo **Settings → Pages → Build and deployment → Source** 選 **GitHub Actions**（已完成）。
-2. 公開設定寫在 `frontend/.env.production`（目前 `VITE_CONTRACT_ID=nft.seed-garden.testnet`）。
+2. 公開設定寫在 `frontend/.env`（目前 `VITE_CONTRACT_ID_TESTNET=nft.seed-garden.testnet`，`VITE_CONTRACT_ID_MAINNET` 空白）。
    要覆蓋時，到 **Settings → Secrets and variables → Actions → Variables** 新增同名變數（例如 `VITE_REOWN_PROJECT_ID`），再按 **Run workflow**。
    這些都是公開值，用 Variables 不用 Secrets。
 
@@ -432,7 +479,7 @@ MetaMask 使用者的 NEAR 帳號就是自己的 `0x...` 地址（eth-implicit �
 
 1. Vercel → New Project → 選 repo，**Root Directory 設 `frontend`**，Framework 選 Vite（Build `npm run build`、Output `dist`）。
    保持「Include source files outside of the Root Directory」開啟，因為 build 會讀 `../viewer` 和 `../examples`。
-2. 在 Environment Variables 加 `VITE_NETWORK_ID`、`VITE_CONTRACT_ID`，以及選填的 `VITE_VIEWER_URL`、`VITE_REOWN_PROJECT_ID`。
+2. 在 Environment Variables 加 `VITE_NETWORK_ID`、`VITE_CONTRACT_ID_TESTNET`、`VITE_CONTRACT_ID_MAINNET`，以及選填的 `VITE_VIEWER_URL`、`VITE_REOWN_PROJECT_ID`。
 3. Deploy。
 
 ## 範例：fxhash 舊作移植

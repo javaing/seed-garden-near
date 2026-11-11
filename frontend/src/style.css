@@ -56,3 +56,8 @@ button.ghost { background: transparent; }
 .foot { margin: 40px 0 16px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; }
 .foot a { color: inherit; }
 .grid > p { grid-column: 1 / -1; }
+
+.net select { font: inherit; font-size: 13px; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--fg); cursor: pointer; }
+.net select option { color: #1d1c20; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.banner { margin: 0; padding: 8px 16px; text-align: center; font-size: 14px; background: #7a4a00; color: #fff3df; }

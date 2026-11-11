@@ -2,7 +2,9 @@ import './polyfills.js';
 import './style.css';
 import {
   CONTRACT_ID,
+  EXPLORER_URL,
   NETWORK_ID,
+  switchNetwork,
   initWallet,
   mint,
   nearToYocto,
@@ -27,6 +29,15 @@ const els = {
   status: $('status'),
   tokens: $('tokens'),
   demo: $('demo'),
+  walletNote: $('wallet-note'),
+  banner: $('mainnet-banner'),
+};
+
+const WALLET_NOTES = {
+  testnet:
+    'On testnet, use <strong>Meteor Wallet</strong> (free testnet account at wallet.meteorwallet.app). ' +
+    'OKX and MetaMask (NEP-518) are wired in but do not work on testnet yet.',
+  mainnet: 'On mainnet, OKX, Meteor, HOT and MetaMask all sign with real NEAR.',
 };
 
 let selector;
@@ -72,6 +83,12 @@ function tokenCard(token) {
 }
 
 async function loadMintInfo() {
+  if (!CONTRACT_ID) {
+    mintInfo = null;
+    els.mintInfo.textContent = `The ${NETWORK_ID} contract is not deployed yet. Switch to testnet to try minting.`;
+    render();
+    return;
+  }
   try {
     mintInfo = await view('mint_info');
     const total = BigInt(mintInfo.price) + STORAGE_BUFFER;
@@ -80,7 +97,7 @@ async function loadMintInfo() {
       ` · You send ${yoctoToNear(total)} NEAR (incl. storage deposit; unused part is refunded)`;
   } catch (e) {
     mintInfo = null;
-    els.mintInfo.textContent = `Cannot read contract ${CONTRACT_ID}. Check that it is deployed and VITE_CONTRACT_ID is set.`;
+    els.mintInfo.textContent = `Cannot read contract ${CONTRACT_ID}. Check that it is deployed on ${NETWORK_ID}.`;
     console.warn(e);
   }
   render();
@@ -92,8 +109,10 @@ async function loadTokens() {
   // 帳號變動時 store 會連續觸發好幾次；只讓最後一次請求寫進畫面，避免重複的卡片
   const req = ++tokensRequest;
   const owner = accountId;
-  if (!owner) {
-    els.tokens.innerHTML = '<p class="muted">Connect a wallet to see the tokens you own.</p>';
+  if (!owner || !CONTRACT_ID) {
+    els.tokens.innerHTML = CONTRACT_ID
+      ? '<p class="muted">Connect a wallet to see the tokens you own.</p>'
+      : `<p class="muted">No ${NETWORK_ID} contract yet.</p>`;
     return;
   }
   try {
@@ -170,12 +189,33 @@ async function onMint() {
 }
 
 async function main() {
-  els.network.textContent = NETWORK_ID;
-  els.contract.textContent = CONTRACT_ID;
+  els.network.value = NETWORK_ID;
+  els.banner.hidden = NETWORK_ID !== 'mainnet';
+  els.walletNote.innerHTML = WALLET_NOTES[NETWORK_ID];
+  els.contract.querySelector('code').textContent = CONTRACT_ID || '(not deployed yet)';
+  if (CONTRACT_ID) els.contract.href = `${EXPLORER_URL}/address/${CONTRACT_ID}`;
+  else els.contract.removeAttribute('href');
+  document.title = NETWORK_ID === 'mainnet' ? 'Seed Garden' : 'Seed Garden (testnet)';
   els.demo.src = viewerSrc('5eed' + '0123456789abcdef'.repeat(3) + 'cafe1234ba5e');
+
+  els.network.onchange = () => {
+    els.network.disabled = true;
+    setStatus(`Switching to ${els.network.value}…`);
+    switchNetwork(selector, els.network.value);
+  };
 
   ({ selector, modal } = await initWallet());
   window.__nearSelector = selector; // 除錯用
+
+  // 錢包登入狀態存在 localStorage、不分網路；用網址直接切網路時，把另一個網路留下的登入清掉
+  const LAST = 'seed-garden:signed-in-network';
+  try {
+    const last = localStorage.getItem(LAST);
+    if (last && last !== NETWORK_ID && selector.isSignedIn()) await (await selector.wallet()).signOut();
+    localStorage.setItem(LAST, NETWORK_ID);
+  } catch (e) {
+    console.warn(e);
+  }
 
   const syncAccount = () => {
     const accounts = selector.store.getState().accounts;

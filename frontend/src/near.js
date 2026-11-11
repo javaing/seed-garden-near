@@ -6,11 +6,55 @@ import { setupHotWallet } from '@near-wallet-selector/hot-wallet';
 import '@near-wallet-selector/modal-ui/styles.css';
 import { setupEthereumModule } from './eth.js';
 
-export const NETWORK_ID = import.meta.env.VITE_NETWORK_ID || 'testnet';
-export const CONTRACT_ID = import.meta.env.VITE_CONTRACT_ID || 'seed-nft.your-account.testnet';
-export const RPC_URL =
-  import.meta.env.VITE_RPC_URL ||
-  (NETWORK_ID === 'mainnet' ? 'https://rpc.mainnet.near.org' : 'https://rpc.testnet.near.org');
+// 網路在執行期決定：?network= > 上次選的（localStorage）> build 時的 VITE_NETWORK_ID。
+// 換網路要重新載入頁面（wallet selector 只能在初始化時指定網路）。
+export const NETWORKS = ['testnet', 'mainnet'];
+const DEFAULT_NETWORK = import.meta.env.VITE_NETWORK_ID || 'testnet';
+const NETWORK_KEY = 'seed-garden:network';
+
+function pickNetwork() {
+  const fromUrl = new URLSearchParams(location.search).get('network');
+  if (NETWORKS.includes(fromUrl)) return fromUrl;
+  try {
+    const saved = localStorage.getItem(NETWORK_KEY);
+    if (NETWORKS.includes(saved)) return saved;
+  } catch {}
+  return NETWORKS.includes(DEFAULT_NETWORK) ? DEFAULT_NETWORK : 'testnet';
+}
+
+export const NETWORK_ID = pickNetwork();
+
+const env = import.meta.env;
+const CONTRACTS = {
+  testnet: env.VITE_CONTRACT_ID_TESTNET || (DEFAULT_NETWORK === 'testnet' ? env.VITE_CONTRACT_ID : '') || '',
+  mainnet: env.VITE_CONTRACT_ID_MAINNET || (DEFAULT_NETWORK === 'mainnet' ? env.VITE_CONTRACT_ID : '') || '',
+};
+const RPCS = {
+  testnet: env.VITE_RPC_URL_TESTNET || 'https://rpc.testnet.near.org',
+  mainnet: env.VITE_RPC_URL_MAINNET || 'https://rpc.mainnet.near.org',
+};
+
+/** 這個網路的合約；還沒部署（沒設定）時是空字串。 */
+export const CONTRACT_ID = CONTRACTS[NETWORK_ID];
+export const RPC_URL = RPCS[NETWORK_ID];
+export const EXPLORER_URL =
+  NETWORK_ID === 'mainnet' ? 'https://nearblocks.io' : 'https://testnet.nearblocks.io';
+
+/** 換網路：先登出目前錢包（帳號屬於另一個網路），記住選擇，再重新載入。 */
+export async function switchNetwork(selector, next) {
+  if (!NETWORKS.includes(next) || next === NETWORK_ID) return;
+  try {
+    if (selector?.isSignedIn()) await (await selector.wallet()).signOut();
+  } catch (e) {
+    console.warn('sign out before switching network failed', e);
+  }
+  try {
+    localStorage.setItem(NETWORK_KEY, next);
+  } catch {}
+  const url = new URL(location.href);
+  url.searchParams.set('network', next);
+  location.replace(url);
+}
 
 const YOCTO = 10n ** 24n;
 export const MINT_GAS = 100_000_000_000_000n; // 100 Tgas
@@ -76,7 +120,8 @@ export async function initWallet() {
     network: NETWORK_ID,
     languageCode: 'en', // 錢包選單固定英文（預設跟隨瀏覽器語言；modal 會讀這個設定）
     // 讓 store 記住 contract，OKX 模組送交易時需要
-    createAccessKeyFor: { contractId: CONTRACT_ID, methodNames: [] },
+    // 沒有合約時不要求 function-call key（mainnet 尚未部署時仍可連錢包）
+    ...(CONTRACT_ID ? { createAccessKeyFor: { contractId: CONTRACT_ID, methodNames: [] } } : {}),
     modules: [
       setupOKXWallet(), // OKX Wallet 瀏覽器擴充（window.okxwallet.near，僅桌面版）
       setupMeteorWallet(),
@@ -86,7 +131,7 @@ export async function initWallet() {
     ],
   });
   const modal = setupModal(selector, {
-    contractId: CONTRACT_ID,
+    contractId: CONTRACT_ID || undefined,
     theme: 'auto',
     description: 'Choose a wallet to connect to NEAR ' + NETWORK_ID,
   });
