@@ -3,6 +3,8 @@
 //!
 //! 標準：NEP-171 core、NEP-177 metadata、NEP-178 approval、NEP-181 enumeration、NEP-199 payout。
 
+mod web4;
+
 use std::collections::HashMap;
 
 use near_contract_standards::non_fungible_token::approval::NonFungibleTokenApproval;

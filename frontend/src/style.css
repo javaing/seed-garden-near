@@ -61,3 +61,4 @@ button.ghost { background: transparent; }
 .net select option { color: #1d1c20; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .banner { margin: 0; padding: 8px 16px; text-align: center; font-size: 14px; background: #7a4a00; color: #fff3df; }
+.card .meta a { font-size: 13px; }

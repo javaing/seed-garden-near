@@ -4,6 +4,7 @@ import {
   CONTRACT_ID,
   EXPLORER_URL,
   NETWORK_ID,
+  WEB4_URL,
   switchNetwork,
   initWallet,
   mint,
@@ -31,6 +32,8 @@ const els = {
   demo: $('demo'),
   walletNote: $('wallet-note'),
   banner: $('mainnet-banner'),
+  onchain: $('onchain'),
+  onchainLink: $('onchain-link'),
 };
 
 const WALLET_NOTES = {
@@ -58,6 +61,11 @@ function seedOf(token) {
   }
 }
 
+// 有 web4 時直接用合約回傳的作品頁（全鏈上）；否則退回本站的 viewer
+function tokenSrc(token, seed) {
+  return WEB4_URL ? `${WEB4_URL}/token/${encodeURIComponent(token.token_id)}?embed=1` : viewerSrc(seed);
+}
+
 function viewerSrc(seed) {
   const sep = VIEWER_URL.includes('?') ? '&' : '?';
   // embed=1：嵌入時停用作品裡「點擊存 PNG」的行為
@@ -72,12 +80,20 @@ function tokenCard(token) {
   frame.title = token.metadata?.title || `Token ${token.token_id}`;
   frame.loading = 'lazy';
   frame.referrerPolicy = 'no-referrer';
-  if (seed) frame.src = viewerSrc(seed);
+  if (seed) frame.src = tokenSrc(token, seed);
   const meta = document.createElement('div');
   meta.className = 'meta';
   meta.innerHTML = `<strong></strong><code></code>`;
   meta.querySelector('strong').textContent = token.metadata?.title || `#${token.token_id}`;
   meta.querySelector('code').textContent = seed ? seed.slice(0, 16) + '…' : '(no seed)';
+  if (WEB4_URL) {
+    const a = document.createElement('a');
+    a.href = `${WEB4_URL}/token/${encodeURIComponent(token.token_id)}`;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = 'View on-chain ↗';
+    meta.append(a);
+  }
   card.append(frame, meta);
   return card;
 }
@@ -196,7 +212,13 @@ async function main() {
   if (CONTRACT_ID) els.contract.href = `${EXPLORER_URL}/address/${CONTRACT_ID}`;
   else els.contract.removeAttribute('href');
   document.title = NETWORK_ID === 'mainnet' ? 'Seed Garden' : 'Seed Garden (testnet)';
-  els.demo.src = viewerSrc('5eed' + '0123456789abcdef'.repeat(3) + 'cafe1234ba5e');
+  const demoSeed = '5eed' + '0123456789abcdef'.repeat(3) + 'cafe1234ba5e';
+  els.demo.src = WEB4_URL ? `${WEB4_URL}/seed/${demoSeed}?embed=1` : viewerSrc(demoSeed);
+  els.onchain.hidden = !WEB4_URL;
+  if (WEB4_URL) {
+    els.onchainLink.href = WEB4_URL + '/';
+    els.onchainLink.textContent = WEB4_URL.replace('https://', '');
+  }
 
   els.network.onchange = () => {
     els.network.disabled = true;

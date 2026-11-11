@@ -1,5 +1,5 @@
 // 讓 fxhash 時代的作品在 NEAR 上跑：提供相同的 fxhash / fxrand / fxpreview API。
-//   ?seed=<hex>     NEAR 合約存在 TokenMetadata.extra 的 64 字元 hex seed
+//   ?seed=<hex>     NEAR 合約存在 TokenMetadata.extra 的 64 字元 hex seed（web4 頁面會先設好 window.__SEED__，優先使用）
 //   ?fxhash=oo...   原本 fxhash 的 base58 hash（可重現 fxhash 上的原作）
 // fxrand 用與 fxhash 官方 snippet 相同的 sfc32 變體，所以同一組 4 個 32-bit 狀態會得到同一串亂數。
 (function () {
@@ -34,7 +34,7 @@
     window.fxhash = fxhashParam;
   } else {
     // NEAR：hex seed 前 32 個字元 → 4 個 uint32
-    var hex = (params.get('seed') || '').toLowerCase().replace(/^0x/, '');
+    var hex = (window.__SEED__ || params.get('seed') || '').toLowerCase().replace(/^0x/, '');
     if (!/^[0-9a-f]{8,}$/.test(hex)) hex = '0'.repeat(64);
     hex = (hex + '0'.repeat(32)).slice(0, 32);
     states = [0, 1, 2, 3].map(function (i) { return parseInt(hex.slice(i * 8, i * 8 + 8), 16) | 0; });

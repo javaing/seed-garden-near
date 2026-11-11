@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>p5 vs mini-p5</title>
+<style>
+  body { margin: 0; padding: 16px; font: 14px/1.5 system-ui, sans-serif; background: #111; color: #eee; }
+  .row { display: grid; grid-template-columns: 200px 200px 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
+  iframe { width: 200px; height: 200px; border: 0; background: #000; }
+  .ok { color: #6fd3a8; } .bad { color: #ff7b7b; }
+  code { font-family: ui-monospace, Consolas, monospace; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<h1>p5.min.js (left) vs on-chain mini-p5 (right)</h1>
+<p>Runs each seed to the final frame in both renderers and compares every pixel. Add <code>?seeds=hex1,hex2</code> or <code>&amp;sunday=1</code>.</p>
+<div id="rows"></div>
+<p id="summary"></p>
+<script>
+  const params = new URLSearchParams(location.search);
+  const sunday = params.get('sunday') === '1' ? '&sunday=1' : '';
+  const rand = () => [...crypto.getRandomValues(new Uint8Array(32))].map((b) => b.toString(16).padStart(2, '0')).join('');
+  const seeds = params.get('seeds') ? params.get('seeds').split(',') : Array.from({ length: 6 }, rand);
+  const results = window.__compareResults = [];
+
+  // Drive both renderers with redraw() instead of waiting for requestAnimationFrame, so the test
+  // is fast and also works in a background tab. The final frame only depends on frameCount.
+  function finished(frame) {
+    return new Promise((resolve) => {
+      frame.addEventListener('load', () => {
+        const w = frame.contentWindow;
+        let done = false;
+        w.addEventListener('fxhash-preview', () => { done = true; }, { once: true });
+        w.noLoop();
+        for (let i = 0; i < 2000 && !done; i++) w.redraw();
+        resolve();
+      }, { once: true });
+    });
+  }
+  function pixels(frame) {
+    const c = frame.contentDocument.querySelector('canvas');
+    return c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+  }
+
+  async function run(seed) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    const a = document.createElement('iframe');
+    const b = document.createElement('iframe');
+    const out = document.createElement('div');
+    out.innerHTML = '<code></code><div class="res">running…</div>';
+    out.querySelector('code').textContent = seed;
+    row.append(a, b, out);
+    document.getElementById('rows').append(row);
+    const done = Promise.all([finished(a), finished(b)]);
+    a.src = `index.html?seed=${seed}&embed=1${sunday}`;
+    b.src = `onchain.html?seed=${seed}&embed=1${sunday}`;
+    await done;
+    const pa = pixels(a), pb = pixels(b);
+    let diff = pa.length === pb.length ? 0 : -1;
+    if (diff === 0) for (let i = 0; i < pa.length; i++) if (pa[i] !== pb[i]) diff++;
+    const res = out.querySelector('.res');
+    res.textContent = diff === 0 ? `identical (${pa.length / 4} px)` : `DIFFERENT: ${diff} channel values`;
+    res.className = 'res ' + (diff === 0 ? 'ok' : 'bad');
+    results.push({ seed, diff, features: b.contentWindow.$fxhashFeatures });
+  }
+
+  Promise.all(seeds.map(run)).then(() => {
+    const bad = results.filter((r) => r.diff !== 0).length;
+    document.getElementById('summary').textContent = bad ? `${bad} of ${results.length} differ` : `All ${results.length} identical`;
+    window.__compareDone = true;
+  });
+</script>
+</body>
+</html>

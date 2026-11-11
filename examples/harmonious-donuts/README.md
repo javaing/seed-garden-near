@@ -15,7 +15,7 @@
 
 NFT 的前提是「同 seed → 同作品」，原作有兩個地方不符合：
 
-1. 自訂的 `shuffle()` 用 `Math.random()` → 顏色順序每次重新整理都不同。改成 `fxrand()`。
+1. 自訂的 `shuffle()` 用 `Math.random()`。後來比對發現：p5 global mode 載入時會把所有 p5 函式複製到 `window`，蓋掉作品自己宣告的 `shuffle()`，所以原作實際上一直用 p5 內建、由 `randomSeed` 決定的 shuffle，本來就是確定性的。`sketch.js` 裡改成 `fxrand()` 的版本因此不會被執行；mini-p5 也照 p5 的行為覆蓋它。
 2. `isSunday` 看觀看當天是不是星期日 → 同一個 token 週日看起來不一樣。改成只由 `?sunday=1` 開啟。
    （如果想保留「週日彩蛋」這個概念，也可以改由 seed 決定，例如 `fxrand() < 1/7`。）
 
@@ -41,3 +41,9 @@ npx vite ../examples --port 5174
 
 - 畫布固定 800×800 內部解析度，用 CSS 縮放到視窗（`style.css` 末段）。原作依視窗大小建畫布，嵌在 iframe 裡會變很小，而且同一個 seed 在不同螢幕上構圖不同。
 - `?embed=1` 時點擊作品不會下載 PNG（前端的 iframe 會帶這個參數）；單獨開啟時保留原本「點擊存圖」的行為。
+
+## 全鏈上版本（web4）
+
+- `mini-p5.js`：只實作這件作品用到的 p5.js 1.x 函式（約 6 KB），random / noise / 顏色 / 繪圖都照 p5 原始碼，畫面與 p5.min.js 逐像素相同。
+- `onchain.html`：`node contract/web4/build.mjs` 產生，跟合約 `web4_get` 回傳的頁面完全一樣（mini-p5、seed shim、sketch 全部 inline，約 16 KB）。
+- `compare.html`：左邊 p5.min.js、右邊 mini-p5，把每個 seed 跑到最後一格再逐像素比對。可加 `?seeds=hex1,hex2` 或 `&sunday=1`。

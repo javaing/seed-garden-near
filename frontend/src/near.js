@@ -37,6 +37,12 @@ const RPCS = {
 /** 這個網路的合約；還沒部署（沒設定）時是空字串。 */
 export const CONTRACT_ID = CONTRACTS[NETWORK_ID];
 export const RPC_URL = RPCS[NETWORK_ID];
+/**
+ * web4 網址：合約自己回傳的作品頁（https://<contract>.page）。
+ * web4 gateway 只支援一層的帳號（x.testnet / x.near），子帳號（a.b.near）沒有憑證，所以那種情況回傳空字串。
+ */
+export const WEB4_URL =
+  CONTRACT_ID && CONTRACT_ID.split('.').length === 2 ? `https://${CONTRACT_ID}.page` : '';
 export const EXPLORER_URL =
   NETWORK_ID === 'mainnet' ? 'https://nearblocks.io' : 'https://testnet.nearblocks.io';
 

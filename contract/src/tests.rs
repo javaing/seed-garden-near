@@ -226,3 +226,67 @@ fn non_owner_cannot_change_price() {
     testing_env!(ctx(accounts(1), NearToken::from_yoctonear(0), 1).build());
     c.set_mint_price(NearToken::from_millinear(1));
 }
+
+// ---------- web4 ----------
+
+fn web4(c: &Contract, path: &str) -> (String, Option<u16>, String) {
+    let r = c.web4_get(crate::web4::Web4Request { path: path.to_string() });
+    let body = String::from_utf8(r.body.into()).unwrap();
+    (r.content_type, r.status, body)
+}
+
+#[test]
+fn web4_token_page_embeds_seed_and_art_code() {
+    let mut c = setup(10);
+    testing_env!(ctx(accounts(1), NearToken::from_near(1), 9).build());
+    let token = c.nft_mint(None);
+    let seed = seed_of(&token);
+
+    let (ct, status, body) = web4(&c, "/token/1");
+    assert!(ct.starts_with("text/html"));
+    assert_eq!(status, None);
+    assert!(body.contains(&format!("window.__SEED__=\"{seed}\";")));
+    assert!(body.contains("<title>Seed Garden #1</title>"));
+    // 作品程式完整在頁面裡：mini-p5、seed shim、原作 sketch
+    assert!(body.contains("mini-p5"));
+    assert!(body.contains("window.fxrand = sfc32"));
+    assert!(body.contains("Harmonious") || body.contains("PALETTES"));
+    assert!(!body.contains("<script src="), "art page must not load external scripts");
+
+    // query string 不影響路由
+    let (_, _, again) = web4(&c, "/token/1?embed=1");
+    assert_eq!(again, body);
+}
+
+#[test]
+fn web4_index_lists_tokens() {
+    let mut c = setup(10);
+    for i in 0..8u8 {
+        testing_env!(ctx(accounts(1), NearToken::from_near(1), i).build());
+        c.nft_mint(None);
+    }
+    let (_, status, body) = web4(&c, "/");
+    assert_eq!(status, None);
+    assert!(body.contains("8 / 10 minted"));
+    assert!(body.contains("price 0.1 NEAR"));
+    assert!(body.contains("<iframe src=\"/token/8?embed=1\""));
+    assert!(body.contains("<iframe src=\"/token/3?embed=1\""));
+    assert!(!body.contains("<iframe src=\"/token/2?embed=1\""));
+    assert!(body.contains("<a href=\"/token/1\">#1</a>"));
+}
+
+#[test]
+fn web4_unknown_paths_are_404() {
+    let c = setup(10);
+    assert_eq!(web4(&c, "/token/1").1, Some(404)); // 還沒 mint
+    assert_eq!(web4(&c, "/nope").1, Some(404));
+    assert_eq!(web4(&c, "/seed/not-hex\"</script>").1, Some(404));
+}
+
+#[test]
+fn web4_seed_preview() {
+    let c = setup(10);
+    let (_, status, body) = web4(&c, "/seed/ABCdef0123");
+    assert_eq!(status, None);
+    assert!(body.contains("window.__SEED__=\"abcdef0123\";"));
+}
