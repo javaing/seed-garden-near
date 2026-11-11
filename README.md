@@ -73,7 +73,7 @@ metadata/   reference JSON example
 | Frontend build + wallet menu (OKX, Meteor, HOT, Ethereum) | Verified |
 | GitHub Pages demo | Deployed by CI on every push to `main` |
 | Contract deployed to testnet | Live at `nft.seed-garden.testnet`; test mints #1 and #2 succeeded and emit the NEP-171 `nft_mint` event |
-| Mint through Meteor on the live page | Recommended path for the testnet demo |
+| Mint through Meteor on the live page | Verified (token #3 minted by a Meteor testnet account) |
 | OKX Wallet on testnet | Not working: the extension signs with mainnet nonce/block hash, so the connect prompt hangs or the tx is rejected on testnet |
 | MetaMask (NEP-518) on testnet | Not working yet: onboarding tx fails with "Transaction execution error"; the `0x…` account has no wallet contract on testnet |
 
@@ -240,7 +240,7 @@ metadata/   reference JSON 範例
 | 前端 build、錢包選單（OKX、Meteor、HOT、Ethereum） | 已驗證 |
 | GitHub Pages demo | 每次 push 到 `main` 由 CI 自動部署 |
 | 合約部署到 testnet | 已部署 `nft.seed-garden.testnet`；測試 mint #1、#2 成功，並發出 NEP-171 `nft_mint` 事件 |
-| 在線上頁面用 Meteor mint | testnet demo 建議路徑 |
+| 在線上頁面用 Meteor mint | 已驗證（Meteor testnet 帳號 mint 出 token #3） |
 | OKX Wallet 在 testnet | 不可用：擴充用 mainnet 的 nonce / block hash 簽，連線會卡住或交易被 testnet 拒絕 |
 | MetaMask（NEP-518）在 testnet | 尚未可用：onboarding 交易回 "Transaction execution error"，`0x…` 帳號在 testnet 沒有 wallet contract |
 
