@@ -84,7 +84,7 @@ metadata/   reference JSON example
 | GitHub Pages demo | Deployed by CI on every push to `main` |
 | Contract deployed to testnet | `seed-garden-nft.testnet` (web4 version). The earlier `nft.seed-garden.testnet` (4 tokens) stays up, but web4 cannot serve its sub-account name |
 | Testnet / Mainnet switch in the header | Done (mainnet contract not deployed yet) |
-| Mint through Meteor on the live page | Verified (token #3 minted by a Meteor testnet account) |
+| Mint through Meteor on the live page | Verified end to end on `seed-garden-nft.testnet`: token #2 minted with Meteor, shown in "My tokens" and at https://seed-garden-nft.testnet.page/token/2 |
 | OKX Wallet on testnet | Not working: the extension signs with mainnet nonce/block hash, so the connect prompt hangs or the tx is rejected on testnet |
 | MetaMask (NEP-518) on testnet | Not working yet: onboarding tx fails with "Transaction execution error"; the `0x…` account has no wallet contract on testnet |
 
@@ -277,7 +277,7 @@ metadata/   reference JSON 範例
 | GitHub Pages demo | 每次 push 到 `main` 由 CI 自動部署 |
 | 合約部署到 testnet | web4 版在 `seed-garden-nft.testnet`。舊的 `nft.seed-garden.testnet`（4 個 token）仍在，但子帳號名稱無法用 web4 開 |
 | 頁首 Testnet / Mainnet 切換 | 完成（mainnet 合約尚未部署） |
-| 在線上頁面用 Meteor mint | 已驗證（Meteor testnet 帳號 mint 出 token #3） |
+| 在線上頁面用 Meteor mint | 已完整驗證（`seed-garden-nft.testnet`）：用 Meteor mint 出 token #2，My tokens 與 https://seed-garden-nft.testnet.page/token/2 都正常顯示 |
 | OKX Wallet 在 testnet | 不可用：擴充用 mainnet 的 nonce / block hash 簽，連線會卡住或交易被 testnet 拒絕 |
 | MetaMask（NEP-518）在 testnet | 尚未可用：onboarding 交易回 "Transaction execution error"，`0x…` 帳號在 testnet 沒有 wallet contract |
 
