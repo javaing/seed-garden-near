@@ -86,24 +86,30 @@ async function loadMintInfo() {
   render();
 }
 
+let tokensRequest = 0;
+
 async function loadTokens() {
-  els.tokens.replaceChildren();
-  if (!accountId) {
+  // 帳號變動時 store 會連續觸發好幾次；只讓最後一次請求寫進畫面，避免重複的卡片
+  const req = ++tokensRequest;
+  const owner = accountId;
+  if (!owner) {
     els.tokens.innerHTML = '<p class="muted">Connect a wallet to see the tokens you own.</p>';
     return;
   }
   try {
     const tokens = await view('nft_tokens_for_owner', {
-      account_id: accountId,
+      account_id: owner,
       from_index: '0',
       limit: 50,
     });
+    if (req !== tokensRequest) return;
     if (!tokens.length) {
       els.tokens.innerHTML = '<p class="muted">No tokens yet. Mint one!</p>';
       return;
     }
-    els.tokens.append(...tokens.reverse().map(tokenCard));
+    els.tokens.replaceChildren(...tokens.reverse().map(tokenCard));
   } catch (e) {
+    if (req !== tokensRequest) return;
     els.tokens.innerHTML = '<p class="muted">Could not load tokens (is the contract deployed?).</p>';
     console.warn(e);
   }
@@ -173,9 +179,11 @@ async function main() {
 
   const syncAccount = () => {
     const accounts = selector.store.getState().accounts;
-    accountId = accounts.find((a) => a.active)?.accountId || null;
+    const next = accounts.find((a) => a.active)?.accountId || null;
+    const changed = next !== accountId;
+    accountId = next;
     render();
-    loadTokens();
+    if (changed || !els.tokens.hasChildNodes()) loadTokens();
   };
   selector.store.observable.subscribe(syncAccount);
   syncAccount();
