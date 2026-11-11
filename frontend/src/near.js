@@ -51,6 +51,26 @@ export async function view(methodName, args = {}) {
   return JSON.parse(new TextDecoder().decode(new Uint8Array(json.result.result)));
 }
 
+/** 查帳號；在這個網路上不存在時回傳 null。 */
+export async function viewAccount(accountId) {
+  const res = await fetch(RPC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 'acct',
+      method: 'query',
+      params: { request_type: 'view_account', finality: 'final', account_id: accountId },
+    }),
+  });
+  const json = await res.json();
+  if (json.error) {
+    if (json.error.cause?.name === 'UNKNOWN_ACCOUNT') return null;
+    throw new Error(json.error.data || json.error.message);
+  }
+  return json.result;
+}
+
 export async function initWallet() {
   const selector = await setupWalletSelector({
     network: NETWORK_ID,

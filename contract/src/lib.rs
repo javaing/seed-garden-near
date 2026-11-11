@@ -209,6 +209,15 @@ impl Contract {
         self.token_reference = token_reference;
     }
 
+    /// owner 調整 mint 價格（yoctoNEAR 字串）。
+    pub fn set_mint_price(&mut self, mint_price: NearToken) {
+        require!(
+            env::predecessor_account_id() == self.tokens.owner_id,
+            "Only owner"
+        );
+        self.mint_price = mint_price;
+    }
+
     /// seed = sha256(random_seed || token_id || payer || block_height)，hex。
     /// 混入 token_id 保證同一個 block 內也不會重複。注意：random_seed 對驗證者不是不可預測的，
     /// 只適合用在藝術變化，不適合抽獎類用途。

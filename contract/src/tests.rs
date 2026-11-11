@@ -206,3 +206,23 @@ fn transfer_payout_moves_token() {
     assert_eq!(p.payout.get(&accounts(1)), Some(&U128(950)));
     assert_eq!(c.nft_token("1".to_string()).unwrap().owner_id, accounts(2));
 }
+
+#[test]
+fn owner_can_change_price() {
+    let mut c = setup(10);
+    testing_env!(ctx(accounts(0), NearToken::from_yoctonear(0), 1).build());
+    c.set_mint_price(NearToken::from_millinear(10));
+    assert_eq!(c.mint_info().price, NearToken::from_millinear(10));
+    // 新價格 0.01 NEAR + storage 即可 mint
+    testing_env!(ctx(accounts(1), NearToken::from_millinear(30), 2).build());
+    c.nft_mint(None);
+    assert_eq!(c.mint_info().minted, 1);
+}
+
+#[test]
+#[should_panic(expected = "Only owner")]
+fn non_owner_cannot_change_price() {
+    let mut c = setup(10);
+    testing_env!(ctx(accounts(1), NearToken::from_yoctonear(0), 1).build());
+    c.set_mint_price(NearToken::from_millinear(1));
+}

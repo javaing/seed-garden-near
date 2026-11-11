@@ -126,6 +126,7 @@ near contract call-function as-transaction seed.my-nft.testnet nft_mint json-arg
 
 `mint_price` is in yoctoNEAR (0.1 NEAR above). `royalties` are basis points, 5,000 max in total.
 `token_media` / `token_reference` can be `null` at first and set later with `set_token_links`.
+The owner can change the price later with `set_mint_price` (the live contract currently charges 0.01 NEAR).
 
 ### 4. Pin the viewer to IPFS
 
@@ -149,7 +150,7 @@ npm run dev                  # http://localhost:5173
 | `VITE_CONTRACT_ID` | Deployed contract account |
 | `VITE_VIEWER_URL` | Optional. IPFS viewer URL; defaults to the bundled `viewer/` |
 | `VITE_REOWN_PROJECT_ID` | Optional. Enables WalletConnect / mobile wallets for Ethereum users |
-| `VITE_STORAGE_BUFFER_NEAR` | Extra deposit sent with mint (default 0.05); the unused part is refunded |
+| `VITE_STORAGE_BUFFER_NEAR` | Extra deposit sent with mint (default 0.02); the unused part is refunded |
 
 ### 6. Deploy the demo
 
@@ -308,6 +309,7 @@ ABI 只是給工具看的描述檔，部署不需要；在 Linux / macOS 可以�
 | `nft_mint(receiver_id?)` | payable。需附 `mint_price + storage 費`，多的退給呼叫者；價格轉給 owner。 |
 | `mint_info()` | 價格、max supply、已 mint 數、每個 token 的 storage 押金估計。 |
 | `set_token_links(token_media?, token_reference?)` | owner 更新之後 mint 的 media / reference。 |
+| `set_mint_price(mint_price)` | owner 調整價格（yoctoNEAR 字串）。目前線上合約是 0.01 NEAR。 |
 | `nft_payout` / `nft_transfer_payout` | NEP-199。 |
 | 其他 | `nft_transfer`、`nft_transfer_call`、`nft_token`、`nft_approve`、`nft_revoke(_all)`、`nft_is_approved`、`nft_total_supply`、`nft_tokens`、`nft_supply_for_owner`、`nft_tokens_for_owner`、`nft_metadata`。 |
 
@@ -380,7 +382,7 @@ npm run build                   # 產出 dist/
   上傳 IPFS 後把 `VITE_VIEWER_URL` 設成 `https://<gateway>/ipfs/<VIEWER_CID>/index.html`。
 - 錢包：`@near-wallet-selector/okx-wallet`（官方 module，讀 `window.okxwallet.near`，**只在桌面瀏覽器出現**）、Meteor、HOT、Ethereum 錢包。
   OKX 模組直接用全域 `Buffer`，所以 `src/polyfills.js` 補上。
-- Mint 時附 `mint_price + VITE_STORAGE_BUFFER_NEAR`（預設 0.05 NEAR），合約會退回多的部分。
+- Mint 時附 `mint_price + VITE_STORAGE_BUFFER_NEAR`（預設 0.02 NEAR），合約會退回多的部分。
 - 需要 Node 24 / npm 11：`package-lock.json` 是 npm 11 產生的，npm 10 的 `npm ci` 會判定不同步。
 - **尚未實測**：OKX 擴充是否能在 testnet 簽交易。如果 OKX 只支援 mainnet，testnet demo 用 Meteor / HOT，OKX 等上 mainnet 再展示。
 

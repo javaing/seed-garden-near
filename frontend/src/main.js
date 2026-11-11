@@ -7,12 +7,13 @@ import {
   mint,
   nearToYocto,
   view,
+  viewAccount,
   yoctoToNear,
 } from './near.js';
 
 const VIEWER_URL =
   import.meta.env.VITE_VIEWER_URL || `${import.meta.env.BASE_URL}viewer/index.html`;
-const STORAGE_BUFFER = nearToYocto(import.meta.env.VITE_STORAGE_BUFFER_NEAR || '0.05');
+const STORAGE_BUFFER = nearToYocto(import.meta.env.VITE_STORAGE_BUFFER_NEAR || '0.02');
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -126,14 +127,36 @@ async function onMint() {
   if (!mintInfo) return;
   const deposit = BigInt(mintInfo.price) + STORAGE_BUFFER;
   els.mint.disabled = true;
-  setStatus('等待錢包簽署…');
   try {
+    // 先確認帳號在這個網路上存在且餘額足夠，避免錢包簽完才收到看不懂的 RPC 錯誤
+    const acct = await viewAccount(accountId);
+    if (!acct) {
+      setStatus(
+        `帳號 ${shortAccount(accountId)} 在 ${NETWORK_ID} 上不存在。` +
+          `請把錢包切到 ${NETWORK_ID}，或先轉一點 ${NETWORK_ID} NEAR 給這個帳號。`,
+        'error',
+      );
+      return;
+    }
+    const gasReserve = nearToYocto('0.01');
+    if (BigInt(acct.amount) < deposit + gasReserve) {
+      setStatus(
+        `${NETWORK_ID} 餘額 ${yoctoToNear(acct.amount)} NEAR，不夠 mint（需要約 ${yoctoToNear(deposit + gasReserve)} NEAR）。`,
+        'error',
+      );
+      return;
+    }
+    setStatus('等待錢包簽署…');
     await mint(selector, deposit);
     setStatus('Mint 成功！', 'ok');
     await Promise.all([loadMintInfo(), loadTokens()]);
   } catch (e) {
     console.error(e);
-    setStatus('Mint 失敗：' + (e?.message || e), 'error');
+    const msg = String(e?.message || e);
+    const hint = /Exceeded \d+ providers/.test(msg)
+      ? `RPC 拒絕了這筆交易。常見原因：錢包目前在別的網路（請切到 ${NETWORK_ID}），或餘額不足。`
+      : msg;
+    setStatus('Mint 失敗：' + hint, 'error');
   } finally {
     render();
   }
